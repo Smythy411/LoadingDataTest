@@ -25,9 +25,9 @@ public class MainActivity extends Activity {
         map.setMultiTouchControls(true);
 
         IMapController mapController = map.getController();
-        mapController.setZoom(9);
-        GeoPoint startPoint = new GeoPoint(48.8583, 2.2944);
-        mapController.setCenter(startPoint);
+        mapController.setZoom(17);
+        GeoPoint myAddress = new GeoPoint(53.279635, -6.346731);
+        mapController.setCenter(myAddress);
     }
 
     public void onResume(){
