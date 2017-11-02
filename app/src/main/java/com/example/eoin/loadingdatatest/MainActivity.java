@@ -1,6 +1,7 @@
 package com.example.eoin.loadingdatatest;
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -11,6 +12,7 @@ import org.osmdroid.api.IMapController;
 import org.osmdroid.bonuspack.routing.MapQuestRoadManager;
 import org.osmdroid.bonuspack.routing.Road;
 import org.osmdroid.bonuspack.routing.RoadManager;
+import org.osmdroid.bonuspack.routing.RoadNode;
 import org.osmdroid.config.Configuration;
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
 import org.osmdroid.util.GeoPoint;
@@ -104,6 +106,20 @@ public class MainActivity extends Activity {
 
             map.getOverlays().add(roadOverlay);
             map.invalidate();
+
+            //Adding visible icons for each node in route
+            //Being able to handle these nodes is very important.
+            Drawable nodeIcon = getResources().getDrawable(R.drawable.marker_node);
+            for (int i=0; i<road.mNodes.size(); i++){
+                RoadNode node = road.mNodes.get(i);
+                Marker nodeMarker = new Marker(map);
+                nodeMarker.setPosition(node.mLocation);
+                nodeMarker.setIcon(nodeIcon);
+                nodeMarker.setTitle("Step "+i);
+                nodeMarker.setSnippet(node.mInstructions);
+                nodeMarker.setSubDescription(Road.getLengthDurationText(MainActivity.this, node.mLength, node.mDuration));
+                map.getOverlays().add(nodeMarker);
+            }//End for
         }//End onPostExecute()
     }//End UpdateRoadTask()
 
