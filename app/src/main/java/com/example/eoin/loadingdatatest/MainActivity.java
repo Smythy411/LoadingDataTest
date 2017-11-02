@@ -1,11 +1,16 @@
 package com.example.eoin.loadingdatatest;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
+import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.provider.Settings;
 import android.util.Log;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -87,8 +92,6 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
         //The waypoints are passed to this thread in order to map a route.
         new UpdateRoadTask().execute(waypoints);
 
-        TextView textViewCurrentLocation = (TextView) findViewById(R.id.textViewCurrentLocation);
-
     }//End OnCreate()
 
     /**
@@ -146,11 +149,17 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
     @Override
     public void onConnected(Bundle connectionHint) {
         try {
+            //FusedLocationApi is deprecated, however it is recommended
+            //To keep using it for the time being by the documentation.
             Location mLastLocation = LocationServices.FusedLocationApi.getLastLocation(
                     mGoogleApiClient);
             if (mLastLocation != null) {
+                Log.i(TAG, "In OnConnected and notNull" );
                 double mLatitude = mLastLocation.getLatitude();
                 double mLongitude = mLastLocation.getLongitude();
+
+                TextView textViewCurrentLocation = (TextView) findViewById(R.id.textViewCurrentLocation);
+                textViewCurrentLocation.setText("Current Location: " + String.valueOf(mLatitude) + " " + String.valueOf(mLongitude));
             }
         } catch (SecurityException e) {
             Log.i(TAG, "Error creating location service: " + e.getMessage() );
@@ -185,14 +194,49 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
     }
 
     protected void onStart() {
+        LocationManager service = (LocationManager) getSystemService(LOCATION_SERVICE);
+        boolean enabled = service
+                .isProviderEnabled(LocationManager.GPS_PROVIDER);
+
+        // check if enabled and if not send user to the GSP settings
+
+        if (!enabled) {
+            //Simple AlertBox to ask the user to enable their location.
+            final AlertDialog.Builder enableLocation = new AlertDialog.Builder(MainActivity.this);
+            enableLocation.setTitle("Would you like to enable your location?");
+
+            //If user wishes to continue with their action
+            enableLocation.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int whichButton) {
+
+                    Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                    startActivity(intent);
+                    setResult(Activity.RESULT_OK);
+
+                    //Returns user to Map Screen
+                    finish();
+                }//End onClick
+            });// End Positive Button
+
+            //If user does not wish to continue with their action
+            enableLocation.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int whichButton) {
+                    setResult(Activity.RESULT_CANCELED);
+                    finish();
+                }//End onClick
+            });//End Negative Button
+
+            enableLocation.show();
+        }//End if
+
         mGoogleApiClient.connect();
         super.onStart();
-    }
+    }//End onStart()
 
     protected void onStop() {
         mGoogleApiClient.disconnect();
         super.onStop();
-    }
+    }//End onStop()
 
 
     public void onResume(){
