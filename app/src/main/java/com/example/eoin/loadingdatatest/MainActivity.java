@@ -1,9 +1,11 @@
 package com.example.eoin.loadingdatatest;
+import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.location.LocationManager;
@@ -11,6 +13,8 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -18,6 +22,8 @@ import android.widget.Toast;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationListener;
+import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 
 import org.osmdroid.api.IMapController;
@@ -37,11 +43,14 @@ import java.util.ArrayList;
 import static android.content.ContentValues.TAG;
 
 
-public class MainActivity extends Activity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener{
+public class MainActivity extends Activity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener {
+
+    public static final int MY_PERMISSIONS_REQUEST_LOCATION = 99;
 
     //Map view
     MapView map;
     private GoogleApiClient mGoogleApiClient ;
+    private LocationRequest mLocationRequest;
 
     @Override public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -76,7 +85,7 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
         ArrayList<GeoPoint> waypoints = new ArrayList<>();
         waypoints.add(myAddress);
         //End location
-        GeoPoint endPoint = new GeoPoint(53.2851255, -6.3374528);
+        GeoPoint endPoint = new GeoPoint(53.3373698, -6.2675443);
         waypoints.add(endPoint);
 
         //Marker for the end of the route
@@ -149,27 +158,36 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
     @Override
     public void onConnected(Bundle connectionHint) {
         try {
+
+            mLocationRequest = LocationRequest.create();
+            mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+            mLocationRequest.setInterval(1000); // Update location every second
             //FusedLocationApi is deprecated, however it is recommended
             //To keep using it for the time being by the documentation.
+
+            LocationServices.FusedLocationApi.requestLocationUpdates(
+                    mGoogleApiClient, mLocationRequest, this);
+
             Location mLastLocation = LocationServices.FusedLocationApi.getLastLocation(
                     mGoogleApiClient);
+
             if (mLastLocation != null) {
                 Log.i(TAG, "In OnConnected and notNull" );
                 double mLatitude = mLastLocation.getLatitude();
                 double mLongitude = mLastLocation.getLongitude();
 
                 TextView textViewCurrentLocation = (TextView) findViewById(R.id.textViewCurrentLocation);
-                textViewCurrentLocation.setText("Current Location: " + String.valueOf(mLatitude) + " " + String.valueOf(mLongitude));
-            }
+                textViewCurrentLocation.setText("Location: " + String.valueOf(mLatitude) + " " + String.valueOf(mLongitude));
+            }//End if
         } catch (SecurityException e) {
             Log.i(TAG, "Error creating location service: " + e.getMessage() );
-        }
-    }
+        }//End try catch
+    }//End onConnected()
 
     @Override
     public void onConnectionSuspended(int cause) {
         Log.i(TAG, "GoogleApiClient connection suspended");
-    }
+    }//End onConnectionSuspended()
 
     @Override
     public void onConnectionFailed(ConnectionResult result) {
@@ -179,7 +197,7 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
             // show the localized error dialog.
             GoogleApiAvailability.getInstance().getErrorDialog(this, result.getErrorCode(), 0).show();
             return;
-        }
+        }//End if
         // The failure has a resolution. Resolve it.
         // Called typically when the app is not yet authorized, and an
         // authorization
@@ -191,47 +209,64 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
             Log.e(TAG, "Exception while starting resolution activity", e);
         }
         */
-    }
+    }//End onConnectionFailed()
 
     protected void onStart() {
-        LocationManager service = (LocationManager) getSystemService(LOCATION_SERVICE);
-        boolean enabled = service
-                .isProviderEnabled(LocationManager.GPS_PROVIDER);
 
-        // check if enabled and if not send user to the GSP settings
+        //LocationManager service = (LocationManager) getSystemService(LOCATION_SERVICE);
+        //boolean enabled = service
+          //      .isProviderEnabled(LocationManager.GPS_PROVIDER);
 
-        if (!enabled) {
-            //Simple AlertBox to ask the user to enable their location.
-            final AlertDialog.Builder enableLocation = new AlertDialog.Builder(MainActivity.this);
-            enableLocation.setTitle("Would you like to enable your location?");
+        // check if enabled and if not send user to the GPS settings
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
 
-            //If user wishes to continue with their action
-            enableLocation.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog, int whichButton) {
+            // Should we show an explanation?
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                    Manifest.permission.ACCESS_FINE_LOCATION)) {
 
-                    Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-                    startActivity(intent);
-                    setResult(Activity.RESULT_OK);
+                // Show an explanation to the user *asynchronously* -- don't block
+                // this thread waiting for the user's response! After the user
+                // sees the explanation, try again to request the permission.
+                //if (!enabled) {
+                //Simple AlertBox to ask the user to enable their location.
+                final AlertDialog.Builder enableLocation = new AlertDialog.Builder(MainActivity.this);
+                enableLocation.setTitle("This application requires permission to access your location." +
+                        "Would you like to enable your location?");
 
-                    //Returns user to Map Screen
-                    finish();
-                }//End onClick
-            });// End Positive Button
-
-            //If user does not wish to continue with their action
-            enableLocation.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog, int whichButton) {
-                    setResult(Activity.RESULT_CANCELED);
-                    finish();
-                }//End onClick
-            });//End Negative Button
-
-            enableLocation.show();
-        }//End if
-
+                //If user wishes to continue with their action
+                enableLocation.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                        //Prompt the user once explanation has been shown
+                        ActivityCompat.requestPermissions(MainActivity.this,
+                                new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                                MY_PERMISSIONS_REQUEST_LOCATION);
+                    }//End onClick
+                });// End Positive Button
+                //If user does not wish to continue with their action
+                enableLocation.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                        setResult(Activity.RESULT_CANCELED);
+                    }//End onClick
+                });//End Negative Button
+                enableLocation.show();
+            } else {
+                // No explanation needed, we can request the permission.
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                        MY_PERMISSIONS_REQUEST_LOCATION);
+            }
+        }
         mGoogleApiClient.connect();
         super.onStart();
     }//End onStart()
+
+    @Override
+    public void onLocationChanged(Location location) {
+        //TextView textViewCurrentLocation = (TextView) findViewById(R.id.textViewCurrentLocation);
+        //textViewCurrentLocation.setText("Location received: " + location.toString());
+    }
 
     protected void onStop() {
         mGoogleApiClient.disconnect();
