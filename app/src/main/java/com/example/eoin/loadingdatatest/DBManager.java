@@ -27,10 +27,11 @@ public class DBManager {
     private static final int DATABASE_VERSION = 1;
 
     private static final String DATABASE_CREATE =
-            "create table if not exists NodeList (nodeID integer primary key not null, " +
+            "create table if not exists NodeList (id integer primary key autoincrement, " +
+                    "nodeID long not null, " +
                     "lon text not null, " +
                     "lat text not null);" +
-            "create table if not exists WayList (id integer primary key autoincrement," +
+            "create table if not exists WayList (id integer primary key autoincrement, " +
                     "wayID integer not null, " +
                     "nd integer not null, " +
                         "foreign key  (nd) references NodeList(nodeID));";
@@ -91,7 +92,7 @@ public class DBManager {
     }//End getTableSize
 
     //Inserts a new Node into the table
-    public long insertNode(int nId, String lat, String lon) {
+    public long insertNode(long nId, String lon, String lat) {
         ContentValues initialValues = new ContentValues();
         initialValues.put(nodeId, nId);
         initialValues.put(longitude, lon);
@@ -100,7 +101,7 @@ public class DBManager {
     }//End insertNode
 
     //Deletes Node from table, using the title as a key
-    public boolean deleteNodeById(int nid) {
+    public boolean deleteNodeById(long nid) {
         return db.delete(DATABASE_TABLE_NODE, nodeId + "=" + "'" + nid + "'", null) > 0;
     }//deleteNodeById
 
@@ -115,20 +116,20 @@ public class DBManager {
     }//End getAllNodes
 
     //Returns a single row
-    public String[] getNode(int nid) throws SQLException {
+    public String[] getNode(long nid) throws SQLException {
         Cursor mCursor =
                 db.query(true, DATABASE_TABLE_NODE, new String[] {
                                 nodeId,
-                                latitude,
                                 longitude,
+                                latitude,
                         },
                         nodeId + " = " +  nid, null, null, null, null, null);
         if (mCursor != null) {
             mCursor.moveToFirst();
         }//End if
-        String retLat = mCursor.getString(1);
-        String retLon = mCursor.getString(2);
-        String[] array = {retLat, retLon};
+        String retLon = mCursor.getString(1);
+        String retLat = mCursor.getString(2);
+        String[] array = {retLon, retLat};
         return array;
     }//End getBook
 

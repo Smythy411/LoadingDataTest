@@ -26,6 +26,7 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
+import com.opencsv.CSVReader;
 
 import org.osmdroid.api.IMapController;
 import org.osmdroid.bonuspack.routing.MapQuestRoadManager;
@@ -39,7 +40,12 @@ import org.osmdroid.views.MapView;
 import org.osmdroid.views.overlay.Marker;
 import org.osmdroid.views.overlay.Polyline;
 
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.List;
 
 import static android.content.ContentValues.TAG;
 
@@ -62,11 +68,32 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
 
         buildGoogleApiClient();
 
+        String next[] = {};
+        List<String[]> list = new ArrayList<String[]>();
+        try {
+            CSVReader reader = new CSVReader(new InputStreamReader(getAssets().open("nodes.csv")), '\t');//Specify asset file name
+            //in open();
+            for(;;) {
+                next = reader.readNext();
+                if(next != null) {
+                    list.add(next);
+                } else {
+                    break;
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
         DBManager db = new DBManager(this);
         db.open();
-        db.insertNode(4222416, "53.2870376", "-6.3536869");
+
+        for (int i = 1; i < 50; i++) {
+            db.insertNode(Integer.parseInt(list.get(i)[0]), list.get(i)[1], list.get(i)[2]);
+        }
+
+        //db.insertNode(4222416, "53.2870376", "-6.3536869");
         String testNode[] = db.getNode(4222416);
-        Log.v(TAG, String.format("Lat: %s, Lon: %s", testNode[0], testNode[1]));
         db.close();
 
         map = (MapView) findViewById(R.id.map);
@@ -97,6 +124,7 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
         GeoPoint point2 = new GeoPoint (53.2763687, -6.3403611);
         GeoPoint point3 = new GeoPoint (53.2765424, -6.3404350);
         GeoPoint point4 = new GeoPoint (53.2765700, -6.3402534);
+
 
         GeoPoint pulledPoint = new GeoPoint (Double.parseDouble(testNode[0]), Double.parseDouble(testNode[1]));
         waypoints.add(pulledPoint);

@@ -43,5 +43,6 @@ dependencies {
     compile 'com.google.code.gson:gson:2.8.0'
     compile 'com.squareup.okhttp3:okhttp:3.9.0'
     compile 'com.squareup.okhttp:okhttp:2.7.0'
+    compile 'com.opencsv:opencsv:3.9'
     testCompile 'junit:junit:4.12'
 }
