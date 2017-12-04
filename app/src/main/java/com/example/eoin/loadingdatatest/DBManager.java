@@ -21,6 +21,9 @@ public class DBManager {
     public static final String latitude = "lat";
     public static final String longitude = "lon";
 
+    public static final String wayID = "wayID";
+    public static final String nd = "nd";
+
     private static final String DATABASE_NAME = "routeData";
     private static final String DATABASE_TABLE_NODE = "NodeList";
     private static final String DATABASE_TABLE_WAY = "WayList";
@@ -32,8 +35,8 @@ public class DBManager {
                     "lon text not null, " +
                     "lat text not null);" +
             "create table if not exists WayList (id integer primary key autoincrement, " +
-                    "wayID integer not null, " +
-                    "nd integer not null, " +
+                    "wayID long not null, " +
+                    "nd long not null, " +
                         "foreign key  (nd) references NodeList(nodeID));";
 
     private final Context context;
@@ -100,6 +103,14 @@ public class DBManager {
         return db.insert(DATABASE_TABLE_NODE, null, initialValues);
     }//End insertNode
 
+    //Inserts a new Way into the table
+    public long insertWay(long wId, long nId) {
+        ContentValues initialValues = new ContentValues();
+        initialValues.put(wayID, wId);
+        initialValues.put(nd, nId);
+        return db.insert(DATABASE_TABLE_NODE, null, initialValues);
+    }//End insertWay
+
     //Deletes Node from table, using the title as a key
     public boolean deleteNodeById(long nid) {
         return db.delete(DATABASE_TABLE_NODE, nodeId + "=" + "'" + nid + "'", null) > 0;
@@ -131,6 +142,16 @@ public class DBManager {
         String retLat = mCursor.getString(2);
         String[] array = {retLon, retLat};
         return array;
-    }//End getBook
+    }//End getNode()
+
+    public Cursor getWay(long wid) throws SQLException {
+        return db.query(true, DATABASE_TABLE_WAY, new String[] {
+                        wayID,
+                        nd,
+                },
+                        wayID + " = " + wid, null, null, null, null, null );
+    }//End getWay()
+
+
 
 }//End DBManager

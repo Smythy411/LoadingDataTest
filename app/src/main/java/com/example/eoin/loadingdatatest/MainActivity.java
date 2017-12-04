@@ -68,34 +68,8 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
 
         buildGoogleApiClient();
 
-        String next[] = {};
-        List<String[]> list = new ArrayList<>();
-        try {
-            CSVReader reader = new CSVReader(new InputStreamReader(getAssets().open("nodes.csv")), '\t');//Specify asset file name
-            //in open();
-            for(;;) {
-                next = reader.readNext();
-                if(next != null) {
-                    list.add(next);
-                } else {
-                    break;
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        DBManager db = new DBManager(this);
-        db.open();
-
-        for (int i = 1; i < 50; i++) {
-            db.insertNode(Integer.parseInt(list.get(i)[0]), list.get(i)[1], list.get(i)[2]);
-        }
-
-        //db.insertNode(4222416, "53.2870376", "-6.3536869");
-        String testNode[] = db.getNode(4222416);
-
-
+        FileHandler fh = new FileHandler("UseCaseNodes.csv", "UseCaseWays.osm", this);
+        fh.openCSVFile();
         map = (MapView) findViewById(R.id.map);
         map.setTileSource(TileSourceFactory.MAPNIK);
 
@@ -125,26 +99,17 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
         GeoPoint point3 = new GeoPoint (53.2765424, -6.3404350);
         GeoPoint point4 = new GeoPoint (53.2765700, -6.3402534);
 
-
-        GeoPoint pulledPoint = new GeoPoint (Double.parseDouble(testNode[0]), Double.parseDouble(testNode[1]));
-        waypoints.add(pulledPoint);
-        Marker testMarker = new Marker(map);
-        testMarker.setPosition(pulledPoint);
-        testMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-        map.getOverlays().add(testMarker);
-        testMarker.setTitle("Testing local database");
-
         waypoints.add(point1);
         waypoints.add(point2);
         waypoints.add(point3);
         waypoints.add(point4);
-
+/*
         for (int i = 1; i < 40; i++) {
             String[] tempNode = db.getNode(Integer.parseInt(list.get(i)[0]));
             GeoPoint tempPoint = new GeoPoint (Double.parseDouble(tempNode[0]), Double.parseDouble(tempNode[1]));
             waypoints.add(tempPoint);
         }//End for
-
+*/
         //End location
         GeoPoint endPoint = new GeoPoint(53.2763963, -6.3401795);
         waypoints.add(endPoint);
