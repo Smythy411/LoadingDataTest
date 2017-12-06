@@ -70,6 +70,7 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
 
         FileHandler fh = new FileHandler("UseCaseNodes.csv", "UseCaseWays.osm", this);
         fh.openCSVFile();
+        fh.parseXml();
         map = (MapView) findViewById(R.id.map);
         map.setTileSource(TileSourceFactory.MAPNIK);
 
