@@ -55,8 +55,9 @@ public class FileHandler {
             e.printStackTrace();
         }//end try catch
 
-        for (int i = 1; i < 50; i++) {
-            db.insertNode(Integer.parseInt(list.get(i)[0]), list.get(i)[1], list.get(i)[2]);
+        for (int i = 1; i < list.size(); i++) {
+            Log.d(TAG, "Inserting node " + list.get(i)[0]);
+            db.insertNode(Long.parseLong(list.get(i)[0]), list.get(i)[1], list.get(i)[2]);
         }
     }//end openCSVFile
 
