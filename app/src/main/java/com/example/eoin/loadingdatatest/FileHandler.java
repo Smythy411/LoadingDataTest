@@ -69,7 +69,7 @@ public class FileHandler {
 
             List<String> temp = new ArrayList<>();
 
-            xpp.setInput( new InputStreamReader(ctx.getAssets().open(osmFile)) ); // pass input whatever xml you have
+            xpp.setInput( new InputStreamReader(ctx.getAssets().open(osmFile)) );
             int eventType = xpp.getEventType();
             while (eventType != XmlPullParser.END_DOCUMENT) {
                 if(eventType == XmlPullParser.START_DOCUMENT) {
@@ -78,7 +78,6 @@ public class FileHandler {
                     if(xpp.getName().equals("way")) {
                         //Log.d(TAG, "Way: " + xpp.getAttributeValue(null, "id"));
                         temp.add(xpp.getAttributeValue(null, "id"));
-
                         int eventType2 = xpp.next();
                         boolean endTag = false;
                         while (!endTag) {
@@ -89,10 +88,11 @@ public class FileHandler {
                                 }
                             } else if (eventType2 == XmlPullParser.END_TAG) {
                                 if (xpp.getName().equals("way")) {
-                                    Log.d(TAG, "Way: " + temp.get(0));
+                                    Log.d(TAG, "Inserting Way: " + temp.get(0));
                                     for (int i = 1; i < temp.size(); i++) {
-                                        Log.d(TAG, "Node: " + temp.get(i));
-                                    }
+                                        //Log.d(TAG, "Node: " + temp.get(i));
+                                        db.insertWay(Long.parseLong(temp.get(0)), Long.parseLong(temp.get(i)));
+                                    }//end for
                                     temp.clear();
                                     endTag = true;
                                 }//End if

@@ -29,11 +29,12 @@ public class DBManager {
     private static final String DATABASE_TABLE_WAY = "WayList";
     private static final int DATABASE_VERSION = 1;
 
-    private static final String DATABASE_CREATE =
+    private static final String DATABASE_CREATE_NODE =
             "create table if not exists NodeList (id integer primary key autoincrement, " +
                     "nodeID long not null, " +
                     "lon text not null, " +
-                    "lat text not null);" +
+                    "lat text not null);";
+    private static final String DATABASE_CREATE_WAY =
             "create table if not exists WayList (id integer primary key autoincrement, " +
                     "wayID long not null, " +
                     "nd long not null, " +
@@ -59,7 +60,8 @@ public class DBManager {
         //If table does not exist, then it is created
         @Override
         public void onCreate(SQLiteDatabase db) {
-            db.execSQL(DATABASE_CREATE);
+            db.execSQL(DATABASE_CREATE_NODE);
+            db.execSQL(DATABASE_CREATE_WAY);
         }//End onCreate
 
         @Override
@@ -75,7 +77,8 @@ public class DBManager {
 
     //Creates table in database if it does not already exist
     public void createTable() {
-        db.execSQL(DATABASE_CREATE);
+        db.execSQL(DATABASE_CREATE_NODE);
+        db.execSQL(DATABASE_CREATE_WAY);
     }//End createTable
 
     //Drops table from database
@@ -108,10 +111,10 @@ public class DBManager {
         ContentValues initialValues = new ContentValues();
         initialValues.put(wayID, wId);
         initialValues.put(nd, nId);
-        return db.insert(DATABASE_TABLE_NODE, null, initialValues);
+        return db.insert(DATABASE_TABLE_WAY, null, initialValues);
     }//End insertWay
 
-    //Deletes Node from table, using the title as a key
+    //Deletes Node from table, using the id as a key
     public boolean deleteNodeById(long nid) {
         return db.delete(DATABASE_TABLE_NODE, nodeId + "=" + "'" + nid + "'", null) > 0;
     }//deleteNodeById
