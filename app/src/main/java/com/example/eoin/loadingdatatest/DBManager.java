@@ -6,6 +6,7 @@ import android.database.DatabaseUtils;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.util.Log;
 
 /**
  * Created by Eoin on 07/11/2017.
@@ -131,6 +132,7 @@ public class DBManager {
 
     //Returns a single row
     public String[] getNode(long nid) throws SQLException {
+        Log.d("In getNode with ", String.valueOf(nid));
         Cursor mCursor =
                 db.query(true, DATABASE_TABLE_NODE, new String[] {
                                 nodeId,
@@ -147,7 +149,7 @@ public class DBManager {
         return array;
     }//End getNode()
 
-    public Cursor getWay(long wid) throws SQLException {
+    public Cursor getWayById(long wid) throws SQLException {
         return db.query(true, DATABASE_TABLE_WAY, new String[] {
                         wayID,
                         nd,
@@ -155,6 +157,17 @@ public class DBManager {
                         wayID + " = " + wid, null, null, null, null, null );
     }//End getWay()
 
+    public long getWayId(long nid) throws SQLException {
+        Cursor mCursor= db.query(true, DATABASE_TABLE_WAY, new String[] {
+                        wayID,
+                        nd,
+                },
+                nd + " = " + nid, null, null, null, null, null );
+        if (mCursor != null) {
+            mCursor.moveToFirst();
+        }//End if
+        return Long.parseLong(mCursor.getString(0));
+    }
 
 
 }//End DBManager

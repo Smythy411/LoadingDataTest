@@ -59,6 +59,8 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
     private GoogleApiClient mGoogleApiClient ;
     private LocationRequest mLocationRequest;
 
+    DBManager db;
+
     @Override public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Context ctx = getApplicationContext();
@@ -66,11 +68,17 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
         Configuration.getInstance().load(ctx, PreferenceManager.getDefaultSharedPreferences(ctx));
         setContentView(R.layout.activity_main);
 
+        db = new DBManager(ctx);
+        db.open();
+
         buildGoogleApiClient();
 
+        /*File handling. Database is set up so for the moment it is unneeded.
         FileHandler fh = new FileHandler("UseCaseNodes.csv", "UseCaseWays.osm", this);
         fh.openCSVFile();
         fh.parseXml();
+        */
+
         map = (MapView) findViewById(R.id.map);
         map.setTileSource(TileSourceFactory.MAPNIK);
 
@@ -78,42 +86,53 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
         map.setBuiltInZoomControls(true);
         map.setMultiTouchControls(true);
 
+        ArrayList<GeoPoint> wayPoints = generateRoute(282735941);
+
+        //In order to execute the network operations, this task can not be done on the main thread.
+        //The waypoints are passed to this thread in order to map a route.
+        new UpdateRoadTask().execute(wayPoints);
+
+    }//End OnCreate()
+
+    public ArrayList<GeoPoint> generateRoute(long startPoint) {
+        ArrayList<GeoPoint> wayPoints = new ArrayList<>();
+
+        Log.d("StartPoint: ", String.valueOf(startPoint));
+        String tempNode[] = db.getNode(startPoint);
+
+        GeoPoint startLocation = new GeoPoint(Double.parseDouble(tempNode[0]), Double.parseDouble(tempNode[1]));
+
         //Sets the inital zoom level and starting location
         IMapController mapController = map.getController();
         mapController.setZoom(17);
-        GeoPoint myAddress = new GeoPoint(53.2795432, -6.3469185);
-        mapController.setCenter(myAddress);
+        mapController.setCenter(startLocation);
 
         //Simple marker for the starting node of the route
         Marker startMarker = new Marker(map);
-        startMarker.setPosition(myAddress);
+        startMarker.setPosition(startLocation);
         startMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
         map.getOverlays().add(startMarker);
         startMarker.setTitle("Start point");
 
         //An ArrayList to hold the nodes of the route
-        ArrayList<GeoPoint> waypoints = new ArrayList<>();
-        waypoints.add(myAddress);
+        wayPoints.add(startLocation);
 
-        GeoPoint point1 = new GeoPoint (53.2763963, -6.3401795);
-        GeoPoint point2 = new GeoPoint (53.2763687, -6.3403611);
-        GeoPoint point3 = new GeoPoint (53.2765424, -6.3404350);
-        GeoPoint point4 = new GeoPoint (53.2765700, -6.3402534);
+        Long wayId = db.getWayId(startPoint);
+        Cursor mCursor = db.getWayById(wayId);
+        if (mCursor != null) {
+            mCursor.moveToFirst();
+        }//End if
 
-        waypoints.add(point1);
-        waypoints.add(point2);
-        waypoints.add(point3);
-        waypoints.add(point4);
+        while (mCursor.moveToNext()) {
+            Log.d("Node: ", mCursor.getString(1));
+            tempNode = db.getNode(Long.parseLong(mCursor.getString(1)));
+            GeoPoint tempPoint = new GeoPoint(Double.parseDouble(tempNode[0]), Double.parseDouble(tempNode[1]));
+            wayPoints.add(tempPoint);
+        }//end while
 /*
-        for (int i = 1; i < 40; i++) {
-            String[] tempNode = db.getNode(Integer.parseInt(list.get(i)[0]));
-            GeoPoint tempPoint = new GeoPoint (Double.parseDouble(tempNode[0]), Double.parseDouble(tempNode[1]));
-            waypoints.add(tempPoint);
-        }//End for
-*/
         //End location
         GeoPoint endPoint = new GeoPoint(53.2763963, -6.3401795);
-        waypoints.add(endPoint);
+        wayPoints.add(endPoint);
 
         //Marker for the end of the route
         Marker endMarker = new Marker(map);
@@ -121,14 +140,11 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
         endMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
         map.getOverlays().add(endMarker);
         endMarker.setTitle("End point");
-
+*/
         map.invalidate();
 
-        //In order to execute the network operations, this task can not be done on the main thread.
-        //The waypoints are passed to this thread in order to map a route.
-        new UpdateRoadTask().execute(waypoints);
-
-    }//End OnCreate()
+        return wayPoints;
+    }//End generateRoute()
 
     /**
      * Async task to get the road in a separate thread.
