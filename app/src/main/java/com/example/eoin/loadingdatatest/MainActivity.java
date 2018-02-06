@@ -59,6 +59,8 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
     private GoogleApiClient mGoogleApiClient ;
     private LocationRequest mLocationRequest;
 
+    private double routeLength;
+
     DBManager db;
 
     @Override public void onCreate(Bundle savedInstanceState) {
@@ -95,10 +97,12 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
     }//End OnCreate()
 
     public ArrayList<GeoPoint> generateRoute(long startPoint) {
+        //An ArrayList to hold the nodes of the route
         ArrayList<GeoPoint> wayPoints = new ArrayList<>();
 
         Log.d("StartPoint: ", String.valueOf(startPoint));
         String tempNode[] = db.getNode(startPoint);
+        String tempEndNode[];
 
         GeoPoint startLocation = new GeoPoint(Double.parseDouble(tempNode[0]), Double.parseDouble(tempNode[1]));
 
@@ -114,24 +118,35 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
         map.getOverlays().add(startMarker);
         startMarker.setTitle("Start point");
 
-        //An ArrayList to hold the nodes of the route
         wayPoints.add(startLocation);
 
+        int i = 0;
         Long wayId = db.getWayId(startPoint);
-        Cursor mCursor = db.getWayById(wayId);
-        if (mCursor != null) {
-            mCursor.moveToFirst();
-        }//End if
+        while(i  <= 2) {
+            Cursor mCursor = db.getWayById(wayId);
+            if (mCursor != null) {
+                mCursor.moveToFirst();
+            }//End if
 
-        while (mCursor.moveToNext()) {
-            Log.d("Node: ", mCursor.getString(1));
-            tempNode = db.getNode(Long.parseLong(mCursor.getString(1)));
-            GeoPoint tempPoint = new GeoPoint(Double.parseDouble(tempNode[0]), Double.parseDouble(tempNode[1]));
-            wayPoints.add(tempPoint);
-        }//end while
-/*
+            long tempId= wayId;
+            while (mCursor.moveToNext()) {
+                tempNode = db.getNode(Long.parseLong(mCursor.getString(1)));
+                GeoPoint tempPoint = new GeoPoint(Double.parseDouble(tempNode[0]), Double.parseDouble(tempNode[1]));
+                wayPoints.add(tempPoint);
+            }//end while
+            if (tempId == wayId) {
+                if (mCursor.moveToLast()) {
+                    wayId = db.getNewWayId(Long.parseLong(mCursor.getString(1)), tempId);
+                    Log.d("tempId: ", String.valueOf(tempId));
+                }
+            } else {
+                wayId = tempId;
+            }
+            i++;
+        }
+
         //End location
-        GeoPoint endPoint = new GeoPoint(53.2763963, -6.3401795);
+        GeoPoint endPoint = wayPoints.get(wayPoints.size() - 1) ;
         wayPoints.add(endPoint);
 
         //Marker for the end of the route
@@ -140,7 +155,7 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
         endMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
         map.getOverlays().add(endMarker);
         endMarker.setTitle("End point");
-*/
+
         map.invalidate();
 
         return wayPoints;
@@ -167,10 +182,13 @@ public class MainActivity extends Activity implements GoogleApiClient.Connection
             Toast.makeText(MainActivity.this, "distance="+road.mLength, Toast.LENGTH_SHORT).show();
             Toast.makeText(MainActivity.this, "duration="+road.mDuration, Toast.LENGTH_SHORT).show();
 
+            routeLength = road.mLength;
+
             if(road.mStatus != Road.STATUS_OK)
                 Toast.makeText(MainActivity.this, "Error when loading the road - status="+road.mStatus, Toast.LENGTH_SHORT).show();
             Polyline roadOverlay = RoadManager.buildRoadOverlay(road);
 
+            map.getOverlay().clear();
             map.getOverlays().add(roadOverlay);
             map.invalidate();
 

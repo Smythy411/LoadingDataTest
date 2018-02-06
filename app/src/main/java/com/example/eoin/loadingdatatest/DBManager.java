@@ -132,7 +132,6 @@ public class DBManager {
 
     //Returns a single row
     public String[] getNode(long nid) throws SQLException {
-        Log.d("In getNode with ", String.valueOf(nid));
         Cursor mCursor =
                 db.query(true, DATABASE_TABLE_NODE, new String[] {
                                 nodeId,
@@ -163,6 +162,18 @@ public class DBManager {
                         nd,
                 },
                 nd + " = " + nid, null, null, null, null, null );
+        if (mCursor != null) {
+            mCursor.moveToFirst();
+        }//End if
+        return Long.parseLong(mCursor.getString(0));
+    }
+
+    public long getNewWayId(long nid, long wId) throws SQLException {
+        Cursor mCursor= db.query(true, DATABASE_TABLE_WAY, new String[] {
+                        wayID,
+                        nd,
+                },
+                nd + " = " + nid + " AND " + wayID + " != " + wId, null, null, null, null, null );
         if (mCursor != null) {
             mCursor.moveToFirst();
         }//End if
